@@ -20,7 +20,7 @@ import {
 // ========================================
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDiYYQoV3XH8Ki1KU7Nqnrr2rRrNU-EcSg",
+    apiKey: "***",
     authDomain: "photobooth-online-b50e6.firebaseapp.com",
     projectId: "photobooth-online-b50e6",
     storageBucket: "photobooth-online-b50e6.firebasestorage.app",
@@ -41,6 +41,7 @@ const auth = getAuth(app);
 
 let peer = null;
 let connection = null;
+let mediaConnection = null;
 
 let localStream = null;
 let remoteStream = null;
@@ -276,6 +277,12 @@ document
                         iceServers: [
                             {
                                 urls: "stun:stun.l.google.com:19302"
+                            },
+
+                            {
+                                urls: "turn:YOUR_TURN_SERVER",
+                                username: "YOUR_USERNAME",
+                                credential: "YOUR_PASSWORD"
                             }
                         ]
                     }
@@ -496,6 +503,12 @@ document
                         iceServers: [
                             {
                                 urls: "stun:stun.l.google.com:19302"
+                            },
+
+                            {
+                                urls: "turn:YOUR_TURN_SERVER",
+                                username: "YOUR_USERNAME",
+                                credential: "YOUR_PASSWORD"
                             }
                         ]
                     }
@@ -657,48 +670,105 @@ function setupPeerEvents() {
     );
 
 
-    peer.on(
-        "call",
-        incomingCall => {
+    peer.on("call", async incomingCall => {
+
+        console.log("📞 Incoming camera call");
+
+        try {
+
+            // Pastikan kamera sudah tersedia
+            if (!localStream) {
+
+                console.log(
+                    "⏳ Waiting for local camera..."
+                );
+
+                await startCamera();
+            }
 
             if (!localStream) {
+
+                console.error(
+                    "❌ Local stream unavailable"
+                );
+
                 return;
             }
 
-            incomingCall.answer(
-                localStream
+            console.log(
+                "📤 Answering camera call..."
             );
 
-            incomingCall.on(
-                "stream",
-                stream => {
+            mediaConnection = incomingCall;
 
-                    remoteStream =
-                        stream;
+            incomingCall.answer(localStream);
 
-                    remoteVideo.srcObject =
-                        stream;
+            incomingCall.on("stream", stream => {
 
-                    photoRemoteVideo.srcObject =
-                        stream;
+                console.log(
+                    "🎥 REMOTE STREAM RECEIVED (ANSWER)"
+                );
 
-                    connectedTitle.textContent =
-                        "You're together ❤️";
+                remoteStream = stream;
 
-                    connectedSubtitle.textContent =
-                        "Both of you are here.";
+                remoteVideo.srcObject = stream;
+                photoRemoteVideo.srcObject = stream;
 
-                    connectionStatus.textContent =
-                        "Camera connected ❤️";
+                remoteVideo.play().catch(err => {
+                    console.error(
+                        "Remote video play error:",
+                        err
+                    );
+                });
 
-                    startExperienceBtn.style.display =
-                        "inline-block";
+                photoRemoteVideo.play().catch(err => {
+                    console.error(
+                        "Photo remote video play error:",
+                        err
+                    );
+                });
 
-                }
+                connectedTitle.textContent =
+                    "You're together ❤️";
+
+                connectedSubtitle.textContent =
+                    "Both of you are here.";
+
+                connectionStatus.textContent =
+                    "Camera connected ❤️";
+
+                startExperienceBtn.style.display =
+                    "inline-block";
+
+            });
+
+            incomingCall.on("error", error => {
+
+                console.error(
+                    "❌ INCOMING MEDIA ERROR:",
+                    error
+                );
+
+            });
+
+            incomingCall.on("close", () => {
+
+                console.log(
+                    "📴 Incoming media connection closed"
+                );
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "❌ Failed answering call:",
+                error
             );
 
         }
-    );
+
+    });
 
 }
 
@@ -792,64 +862,77 @@ function setupConnection(conn) {
 // CALL CAMERA
 // ========================================
 
-function waitForCameraThenCall(
-    remotePeerId
-) {
+function waitForCameraThenCall(remotePeerId) {
 
-    if (
-        !peer ||
-        !localStream
-    ) {
+    if (!peer || !localStream) {
 
-        setTimeout(
-            () => {
-
-                waitForCameraThenCall(
-                    remotePeerId
-                );
-
-            },
-            300
-        );
+        setTimeout(() => {
+            waitForCameraThenCall(remotePeerId);
+        }, 300);
 
         return;
     }
 
-    const call =
-        peer.call(
-            remotePeerId,
-            localStream
+    console.log("📞 Calling peer:", remotePeerId);
+
+    mediaConnection = peer.call(
+        remotePeerId,
+        localStream
+    );
+
+    mediaConnection.on("stream", stream => {
+
+        console.log("🎥 REMOTE STREAM RECEIVED");
+
+        remoteStream = stream;
+
+        remoteVideo.srcObject = stream;
+        photoRemoteVideo.srcObject = stream;
+
+        remoteVideo.play().catch(err => {
+            console.error("Remote video play error:", err);
+        });
+
+        photoRemoteVideo.play().catch(err => {
+            console.error("Photo remote video play error:", err);
+        });
+
+        connectedTitle.textContent =
+            "You're together ❤️";
+
+        connectedSubtitle.textContent =
+            "Both of you are here.";
+
+        connectionStatus.textContent =
+            "Camera connected ❤️";
+
+        startExperienceBtn.style.display =
+            "inline-block";
+
+    });
+
+    mediaConnection.on("error", error => {
+
+        console.error(
+            "❌ MEDIA CONNECTION ERROR:",
+            error
         );
 
-    call.on(
-        "stream",
-        stream => {
+        connectionStatus.textContent =
+            "Camera connection failed.";
 
-            remoteStream =
-                stream;
+    });
 
-            remoteVideo.srcObject =
-                stream;
+    mediaConnection.on("close", () => {
 
-            photoRemoteVideo.srcObject =
-                stream;
+        console.log("📴 Media connection closed");
 
-            photoRemoteVideo.play().catch(() => {});
+        remoteStream = null;
 
-            connectedTitle.textContent =
-                "You're together ❤️";
+        remoteVideo.srcObject = null;
+        photoRemoteVideo.srcObject = null;
 
-            connectedSubtitle.textContent =
-                "Both of you are here.";
-
-            connectionStatus.textContent =
-                "Camera connected ❤️";
-
-            startExperienceBtn.style.display =
-                "inline-block";
-
-        }
-    );
+    });
 
 }
 
