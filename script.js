@@ -57,6 +57,10 @@ let partnerPhotos = [];
 
 let waitingForPartnerPhoto = false;
 
+let photoStarted = new Set();
+let photoCaptured = new Set();
+let photoCompleted = new Set();
+
 
 // ========================================
 // PAGE ELEMENTS
@@ -1050,31 +1054,23 @@ startExperienceBtn
 
 
 function openPhotobooth() {
-
     currentPhotoIndex = 0;
-
     myPhotos = [];
-
     partnerPhotos = [];
 
-    showPage(
-        photoboothPage
-    );
+    photoStarted.clear();
+    photoCaptured.clear();
+    photoCompleted.clear();
 
-    // Kamera sendiri
-    photoLocalVideo.srcObject =
-        localStream;
+    showPage(photoboothPage);
 
-    // Kamera pasangan
+    photoLocalVideo.srcObject = localStream;
+
     if (remoteStream) {
-
-        photoRemoteVideo.srcObject =
-            remoteStream;
-
+        photoRemoteVideo.srcObject = remoteStream;
     }
 
     preparePhoto();
-
 }
 
 
@@ -1139,64 +1135,52 @@ function preparePhoto() {
 // TAKE PHOTO
 // ========================================
 
-takePhotoBtn
-    .addEventListener(
-        "click",
-        () => {
+takePhotoBtn.addEventListener("click", () => {
 
-            if (!connection) {
+    if (!connection || !connection.open) {
+        alert("Connection terputus.");
+        return;
+    }
 
-                alert(
-                    "Connection terputus."
-                );
+    const index = currentPhotoIndex;
 
-                return;
-            }
+    takePhotoBtn.style.display = "none";
 
-            takePhotoBtn.style.display =
-                "none";
+    console.log("👉 STARTING PHOTO:", index);
 
-            connection.send({
+    // Mulai di device sendiri
+    beginRemotePhoto(index);
 
-                type:
-                    "photo-start",
-
-                photoIndex:
-                    currentPhotoIndex
-
-            });
-
-            beginRemotePhoto(
-                currentPhotoIndex
-            );
-
-        }
-    );
+    // Beritahu partner
+    connection.send({
+        type: "photo-start",
+        photoIndex: index
+    });
+});
 
 
 // ========================================
 // COUNTDOWN
 // ========================================
 
-function beginRemotePhoto(
-    photoIndex
-) {
-
-    if (
-        photoIndex !==
-        currentPhotoIndex
-    ) {
+function beginRemotePhoto(photoIndex) {
+    if (photoIndex !== currentPhotoIndex) {
         return;
     }
 
-    runCountdown(
-        () => {
+    // Jangan mulai countdown dua kali
+    if (photoStarted.has(photoIndex)) {
+        console.log("⚠️ Photo already started:", photoIndex);
+        return;
+    }
 
-            capturePhoto();
+    photoStarted.add(photoIndex);
 
-        }
-    );
+    console.log("📸 START PHOTO:", photoIndex);
 
+    runCountdown(() => {
+        capturePhoto(photoIndex);
+    });
 }
 
 
@@ -1252,26 +1236,26 @@ function runCountdown(
 // CAPTURE PHOTO
 // ========================================
 
-function capturePhoto() {
+function capturePhoto(photoIndex) {
 
-    console.log("📸 CAPTURE:", myName);
-
-    if (
-        !localVideo.srcObject
-    ) {
+    if (photoCaptured.has(photoIndex)) {
+        console.log("⚠️ Already captured:", photoIndex);
         return;
     }
 
-    const video =
-        localVideo;
+    if (!localVideo.srcObject) {
+        console.log("❌ No local stream");
+        return;
+    }
 
-    const canvas =
-        document.createElement(
-            "canvas"
-        );
+    // Tandai sudah capture SEBELUM proses berikutnya
+    photoCaptured.add(photoIndex);
 
-    const width =
-        640;
+    const video = localVideo;
+
+    const canvas = document.createElement("canvas");
+
+    const width = 640;
 
     const height =
         Math.round(
@@ -1280,16 +1264,10 @@ function capturePhoto() {
             width
         );
 
-    canvas.width =
-        width;
+    canvas.width = width;
+    canvas.height = height;
 
-    canvas.height =
-        height;
-
-    const ctx =
-        canvas.getContext(
-            "2d"
-        );
+    const ctx = canvas.getContext("2d");
 
     ctx.drawImage(
         video,
@@ -1299,36 +1277,31 @@ function capturePhoto() {
         height
     );
 
-    const image =
-        canvas.toDataURL(
-            "image/jpeg",
-            0.7
-        );
+    const image = canvas.toDataURL(
+        "image/jpeg",
+        0.7
+    );
 
-    myPhotos[
-        currentPhotoIndex
-    ] = image;
+    myPhotos[photoIndex] = image;
 
-    photoStatus.textContent =
-        "Captured ❤️";
+    console.log(
+        "📸 CAPTURE:",
+        photoIndex,
+        "myPhotos length:",
+        myPhotos.length
+    );
 
+    photoStatus.textContent = "Captured ❤️";
 
-    connection.send({
+    if (connection && connection.open) {
+        connection.send({
+            type: "photo-data",
+            photoIndex: photoIndex,
+            image: image
+        });
+    }
 
-        type:
-            "photo-data",
-
-        photoIndex:
-            currentPhotoIndex,
-
-        image:
-            image
-
-    });
-
-
-    checkPhotoComplete();
-
+    checkPhotoComplete(photoIndex);
 }
 
 
@@ -1336,22 +1309,23 @@ function capturePhoto() {
 // RECEIVE PARTNER PHOTO
 // ========================================
 
-function receivePartnerPhoto(
-    photoIndex,
-    image
-) {
+function receivePartnerPhoto(photoIndex, image) {
+
+    if (photoIndex < 0 || photoIndex >= photoPrompts.length) {
+        console.log("⚠️ Invalid photo index:", photoIndex);
+        return;
+    }
+
+    partnerPhotos[photoIndex] = image;
 
     console.log(
-        "📥 RECEIVED PARTNER PHOTO:",
-        photoIndex
+        "📥 PARTNER PHOTO:",
+        photoIndex,
+        "partnerPhotos:",
+        partnerPhotos.map((p, i) => p ? `PHOTO ${i}` : "EMPTY")
     );
 
-    partnerPhotos[
-        photoIndex
-    ] = image;
-
-    checkPhotoComplete();
-
+    checkPhotoComplete(photoIndex);
 }
 
 
@@ -1359,51 +1333,55 @@ function receivePartnerPhoto(
 // CHECK BOTH PHOTOS
 // ========================================
 
-function checkPhotoComplete() {
+function checkPhotoComplete(photoIndex) {
 
-    const mine =
-        myPhotos[
-            currentPhotoIndex
-        ];
-
-    const partner =
-        partnerPhotos[
-            currentPhotoIndex
-        ];
-
-
-    if (
-        mine &&
-        partner
-    ) {
-
-        photoStatus.textContent =
-            "You both got the shot! ❤️";
-
-        setTimeout(
-            () => {
-
-                currentPhotoIndex++;
-
-                if (
-                    currentPhotoIndex <
-                    photoPrompts.length
-                ) {
-
-                    preparePhoto();
-
-                } else {
-
-                    createPhotostrip();
-
-                }
-
-            },
-            1200
-        );
-
+    if (photoCompleted.has(photoIndex)) {
+        return;
     }
 
+    const mine = myPhotos[photoIndex];
+    const partner = partnerPhotos[photoIndex];
+
+    console.log(
+        "🔎 CHECK PHOTO",
+        photoIndex,
+        "mine:",
+        !!mine,
+        "partner:",
+        !!partner
+    );
+
+    if (!mine || !partner) {
+        return;
+    }
+
+    // Jangan pernah menyelesaikan foto yang sama dua kali
+    photoCompleted.add(photoIndex);
+
+    photoStatus.textContent =
+        "You both got the shot! ❤️";
+
+    setTimeout(() => {
+
+        // Pastikan kita masih di index yang benar
+        if (currentPhotoIndex !== photoIndex) {
+            return;
+        }
+
+        currentPhotoIndex++;
+
+        console.log(
+            "➡️ NEXT PHOTO:",
+            currentPhotoIndex
+        );
+
+        if (currentPhotoIndex < photoPrompts.length) {
+            preparePhoto();
+        } else {
+            createPhotostrip();
+        }
+
+    }, 1200);
 }
 
 
