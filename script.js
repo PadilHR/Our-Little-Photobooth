@@ -1070,6 +1070,16 @@ function openPhotobooth() {
         photoRemoteVideo.srcObject = remoteStream;
     }
 
+    photoLocalVideo.play().catch(err => {
+        console.log("Photo local video play error:", err);
+    });
+
+    if (remoteStream) {
+        photoRemoteVideo.play().catch(err => {
+            console.log("Photo remote video play error:", err);
+        });
+    }
+
     preparePhoto();
 }
 
@@ -1243,15 +1253,14 @@ function capturePhoto(photoIndex) {
         return;
     }
 
-    if (!localVideo.srcObject) {
+    if (!photoLocalVideo.srcObject) {
         console.log("❌ No local stream");
         return;
     }
 
-    // Tandai sudah capture SEBELUM proses berikutnya
     photoCaptured.add(photoIndex);
 
-    const video = localVideo;
+    const video = photoLocalVideo;
 
     const canvas = document.createElement("canvas");
 
@@ -1284,12 +1293,7 @@ function capturePhoto(photoIndex) {
 
     myPhotos[photoIndex] = image;
 
-    console.log(
-        "📸 CAPTURE:",
-        photoIndex,
-        "myPhotos length:",
-        myPhotos.length
-    );
+    console.log("📸 CAPTURE:", photoIndex);
 
     photoStatus.textContent = "Captured ❤️";
 
