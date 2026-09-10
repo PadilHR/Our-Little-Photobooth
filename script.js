@@ -777,34 +777,24 @@ function setupPeerEvents() {
 // CONNECT
 // ========================================
 
-function connectToPeer(
-    remotePeerId
-) {
+function connectToPeer(remotePeerId) {
 
-    if (
-        !peer ||
-        connection
-    ) {
+    if (!peer) {
         return;
     }
 
-    connection =
-        peer.connect(
-            remotePeerId,
-            {
-                reliable: true
-            }
-        );
+    console.log("🔗 Connecting data to:", remotePeerId);
 
-    setupConnection(
-        connection
+    connection = peer.connect(
+        remotePeerId,
+        {
+            reliable: true
+        }
     );
 
+    setupConnection(connection);
 
-    waitForCameraThenCall(
-        remotePeerId
-    );
-
+    waitForCameraThenCall(remotePeerId);
 }
 
 
@@ -814,46 +804,71 @@ function connectToPeer(
 
 function setupConnection(conn) {
 
-    conn.on(
-        "open",
-        () => {
+    conn.on("open", () => {
 
-            connectionStatus.textContent =
-                "Connected ❤️";
+        console.log("✅ DATA CONNECTION OPEN");
 
-            conn.send({
+        connection = conn;
 
-                type: "hello",
+        connectionStatus.textContent =
+            "Connected ❤️";
 
-                name: myName
+        conn.send({
+            type: "hello",
+            name: myName
+        });
 
-            });
+    });
 
-        }
-    );
+    conn.on("data", data => {
 
+        console.log("📨 DATA RECEIVED:", data);
 
-    conn.on(
-        "data",
-        data => {
+        handleData(data);
 
-            handleData(data);
+    });
 
-        }
-    );
+    conn.on("close", () => {
 
+        console.warn(
+            "⚠️ DATA CONNECTION CLOSED"
+        );
 
-    conn.on(
-        "close",
-        () => {
-
-            connectionStatus.textContent =
-                "The other person disconnected.";
-
+        if (connection === conn) {
             connection = null;
-
         }
-    );
+
+        connectionStatus.textContent =
+            "Reconnecting... ❤️";
+
+        // Coba sambungkan kembali
+        setTimeout(() => {
+
+            if (peer) {
+
+                const remotePeerId =
+                    myRole === "host"
+                        ? getGuestPeerId()
+                        : getHostPeerId();
+
+                if (remotePeerId) {
+                    connectDataOnly(remotePeerId);
+                }
+
+            }
+
+        }, 1000);
+
+    });
+
+    conn.on("error", error => {
+
+        console.error(
+            "❌ DATA CONNECTION ERROR:",
+            error
+        );
+
+    });
 
 }
 
