@@ -270,7 +270,16 @@ document
 
                 await signInAnonymously(auth);
 
-                peer = new Peer();
+                peer = new Peer({
+                    debug: 3,
+                    config: {
+                        iceServers: [
+                            {
+                                urls: "stun:stun.l.google.com:19302"
+                            }
+                        ]
+                    }
+                });
 
                 setupPeerEvents();
 
@@ -481,7 +490,16 @@ document
                 remoteLabel.textContent =
                     roomData.hostName;
 
-                peer = new Peer();
+                peer = new Peer({
+                    debug: 3,
+                    config: {
+                        iceServers: [
+                            {
+                                urls: "stun:stun.l.google.com:19302"
+                            }
+                        ]
+                    }
+                });
 
                 setupPeerEvents();
 
@@ -611,6 +629,18 @@ async function startCamera() {
 // ========================================
 
 function setupPeerEvents() {
+
+        peer.on(
+        "error",
+        error => {
+
+            console.error(
+                "PEER ERROR:",
+                error
+            );
+
+        }
+    );
 
     peer.on(
         "connection",
