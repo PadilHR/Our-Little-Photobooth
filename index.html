@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Our Little Photobooth ❤️</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+
+<body>
+
+    <!-- LANDING -->
+
+    <main id="landingPage" class="page active">
+
+        <div class="card">
+
+            <div class="heart">❤️</div>
+
+            <p class="eyebrow">
+                A LITTLE SOMETHING FOR YOU
+            </p>
+
+            <h1>
+                Our Little<br>
+                Photobooth
+            </h1>
+
+            <p class="description">
+                A tiny place for two people<br>
+                to make a little memory together.
+            </p>
+
+            <button
+                id="startBtn"
+                class="primary-btn"
+                type="button">
+
+                Enter the Booth
+
+            </button>
+
+        </div>
+
+    </main>
+
+
+    <!-- NAME -->
+
+    <main id="namePage" class="page">
+
+        <div class="card">
+
+            <p class="eyebrow">
+                BEFORE WE BEGIN
+            </p>
+
+            <h2>
+                What's your name?
+            </h2>
+
+            <p class="description">
+                This is how your name will appear
+                inside the little booth.
+            </p>
+
+            <input
+                id="nameInput"
+                type="text"
+                placeholder="Your name..."
+                maxlength="20"
+                autocomplete="off">
+
+            <button
+                id="continueBtn"
+                class="primary-btn"
+                type="button">
+
+                Continue
+
+            </button>
+
+        </div>
+
+    </main>
+
+
+    <!-- ROOM -->
+
+    <main id="roomPage" class="page">
+
+        <div class="card">
+
+            <p class="eyebrow">
+                OUR LITTLE ROOM
+            </p>
+
+            <h2>
+                How are we joining?
+            </h2>
+
+            <div class="room-options">
+
+                <button
+                    id="createRoomBtn"
+                    class="room-option"
+                    type="button">
+
+                    <span class="option-icon">✨</span>
+
+                    <strong>
+                        Create a Room
+                    </strong>
+
+                    <small>
+                        Start a new little room
+                    </small>
+
+                </button>
+
+
+                <button
+                    id="joinRoomBtn"
+                    class="room-option"
+                    type="button">
+
+                    <span class="option-icon">💌</span>
+
+                    <strong>
+                        Join a Room
+                    </strong>
+
+                    <small>
+                        Enter a room someone created
+                    </small>
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!-- CREATE ROOM -->
+
+    <main id="createPage" class="page">
+
+        <div class="card">
+
+            <p class="eyebrow">
+                ROOM CREATED
+            </p>
+
+            <h2>
+                Your room is ready ❤️
+            </h2>
+
+            <p class="description">
+                Send this code to your person.
+            </p>
+
+            <div
+                id="roomCode"
+                class="room-code">
+
+                Connecting...
+
+            </div>
+
+            <button
+                id="copyCodeBtn"
+                class="secondary-btn"
+                type="button">
+
+                Copy Room Code
+
+            </button>
+
+            <p
+                id="waitingText"
+                class="waiting-text">
+
+                Connecting to room server...
+
+            </p>
+
+            <div class="loader"></div>
+
+        </div>
+
+    </main>
+
+
+    <!-- JOIN ROOM -->
+
+    <main id="joinPage" class="page">
+
+        <div class="card">
+
+            <p class="eyebrow">
+                JOIN A ROOM
+            </p>
+
+            <h2>
+                Enter the room code
+            </h2>
+
+            <p class="description">
+                Ask your person for their room code.
+            </p>
+
+            <input
+                id="roomInput"
+                type="text"
+                placeholder="LOVE-ABCD"
+                maxlength="9"
+                autocomplete="off">
+
+            <button
+                id="joinConfirmBtn"
+                class="primary-btn"
+                type="button">
+
+                Join Room
+
+            </button>
+
+            <p
+                id="joinError"
+                class="error">
+            </p>
+
+        </div>
+
+    </main>
+
+
+    <!-- CONNECTED -->
+
+    <main id="connectedPage" class="page">
+
+        <div class="connected-wrapper">
+
+            <p class="eyebrow">
+                OUR LITTLE BOOTH
+            </p>
+
+            <h2 id="connectedTitle">
+                You're together ❤️
+            </h2>
+
+            <p id="connectedSubtitle">
+                Connecting...
+            </p>
+
+            <div class="video-grid">
+
+                <div class="video-card">
+
+                    <video
+                        id="localVideo"
+                        autoplay
+                        muted
+                        playsinline>
+                    </video>
+
+                    <span id="localLabel">
+                        You
+                    </span>
+
+                </div>
+
+
+                <div class="video-card">
+
+                    <video
+                        id="remoteVideo"
+                        autoplay
+                        playsinline>
+                    </video>
+
+                    <span id="remoteLabel">
+                        Your person
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="connectionStatus"
+                class="connection-status">
+
+                Waiting for camera connection...
+
+            </div>
+
+
+            <button
+                id="startExperienceBtn"
+                class="primary-btn"
+                type="button"
+                style="display:none;">
+
+                Start Our Little Experience ❤️
+
+            </button>
+
+        </div>
+
+    </main>
+
+
+    <!-- PHOTOBOOTH -->
+
+    <main id="photoboothPage" class="page">
+
+        <div class="photobooth-wrapper">
+
+            <p class="eyebrow">
+                OUR LITTLE PHOTOBOOTH
+            </p>
+
+            <h2 id="photoTitle">
+                First picture.
+            </h2>
+
+            <p id="photoPrompt">
+                Just smile. ❤️
+            </p>
+
+
+            <div class="photo-preview-grid">
+
+                <div class="photo-preview">
+
+                    <video
+                        id="photoLocalVideo"
+                        autoplay
+                        muted
+                        playsinline>
+                    </video>
+
+                    <span>
+                        You
+                    </span>
+
+                </div>
+
+
+                <div class="photo-preview">
+
+                    <video
+                        id="photoRemoteVideo"
+                        autoplay
+                        playsinline>
+                    </video>
+
+                    <span>
+                        Your person
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="countdown"
+                class="countdown">
+            </div>
+
+
+            <div
+                id="photoStatus"
+                class="photo-status">
+
+                Get ready...
+
+            </div>
+
+
+            <button
+                id="takePhotoBtn"
+                class="primary-btn"
+                type="button">
+
+                Take Photo 📸
+
+            </button>
+
+        </div>
+
+    </main>
+
+
+    <!-- RESULT -->
+
+    <main id="resultPage" class="page">
+        <div class="result-wrapper">
+
+            <p class="eyebrow">YOUR LITTLE MEMORY</p>
+
+            <h2>Choose your photostrip ❤️</h2>
+
+            <p class="description">
+                Pick the design that feels the most like you two.
+            </p>
+
+            <!-- LIVE PREVIEW -->
+            <div class="strip-preview-container">
+                <canvas id="photostripCanvas"></canvas>
+            </div>
+
+            <!-- DESIGN SELECTOR -->
+            <div class="design-section">
+
+                <p class="design-label">
+                    CHOOSE A DESIGN
+                </p>
+
+                <div id="designGrid" class="design-grid">
+
+                    <button class="design-card selected" data-design="classic" type="button">
+                        <div class="design-mini classic-mini">
+                            <span>♡</span>
+                            <span>OUR<br>MEMORY</span>
+                            <span>♡</span>
+                        </div>
+                        <strong>Classic</strong>
+                        <small>Simple & elegant</small>
+                    </button>
+
+                    <button class="design-card" data-design="love" type="button">
+                        <div class="design-mini love-mini">
+                            <span>♥</span>
+                            <span>LOVE<br>LETTER</span>
+                            <span>♥</span>
+                        </div>
+                        <strong>Love Letter</strong>
+                        <small>Sweet & romantic</small>
+                    </button>
+
+                    <button class="design-card" data-design="y2k" type="button">
+                        <div class="design-mini y2k-mini">
+                            <span>✦</span>
+                            <span>OUR<br>VIBE</span>
+                            <span>✦</span>
+                        </div>
+                        <strong>Y2K</strong>
+                        <small>Fun & nostalgic</small>
+                    </button>
+
+                    <button class="design-card" data-design="film" type="button">
+                        <div class="design-mini film-mini">
+                            <span>DATE</span>
+                            <span>FILM<br>MEMORY</span>
+                            <span>01</span>
+                        </div>
+                        <strong>Film Camera</strong>
+                        <small>Analog & timeless</small>
+                    </button>
+
+                    <button class="design-card" data-design="sakura" type="button">
+                        <div class="design-mini sakura-mini">
+                            <span>✿</span>
+                            <span>JUST<br>US</span>
+                            <span>✿</span>
+                        </div>
+                        <strong>Sakura</strong>
+                        <small>Soft & dreamy</small>
+                    </button>
+
+                    <button class="design-card" data-design="dreamy" type="button">
+                        <div class="design-mini dreamy-mini">
+                            <span>☁</span>
+                            <span>DREAM<br>TOGETHER</span>
+                            <span>☁</span>
+                        </div>
+                        <strong>Dreamy</strong>
+                        <small>Soft & peaceful</small>
+                    </button>
+
+                    <button class="design-card" data-design="strawberry" type="button">
+                        <div class="design-mini strawberry-mini">
+                            <span>🍓</span>
+                            <span>SWEET<br>MEMORY</span>
+                            <span>🍓</span>
+                        </div>
+                        <strong>Strawberry</strong>
+                        <small>Cute & playful</small>
+                    </button>
+
+                    <button class="design-card" data-design="teddy" type="button">
+                        <div class="design-mini teddy-mini">
+                            <span>🧸</span>
+                            <span>OUR<br>DAY</span>
+                            <span>♡</span>
+                        </div>
+                        <strong>Teddy Bear</strong>
+                        <small>Warm & cozy</small>
+                    </button>
+
+                    <button class="design-card" data-design="midnight" type="button">
+                        <div class="design-mini midnight-mini">
+                            <span>☾</span>
+                            <span>YOU<br>& ME</span>
+                            <span>✦</span>
+                        </div>
+                        <strong>Midnight</strong>
+                        <small>Dark & dreamy</small>
+                    </button>
+
+                    <button class="design-card" data-design="newspaper" type="button">
+                        <div class="design-mini newspaper-mini">
+                            <span>THE</span>
+                            <span>MEMORY<br>POST</span>
+                            <span>2026</span>
+                        </div>
+                        <strong>Memory Newspaper</strong>
+                        <small>Vintage & unique</small>
+                    </button>
+
+                </div>
+            </div>
+
+            <div class="download-buttons">
+
+                <button id="downloadStripBtn" class="secondary-btn" type="button">
+                    Download Photostrip
+                </button>
+
+                <button id="downloadPhotosPdfBtn" class="secondary-btn" type="button">
+                    Download All Photos PDF
+                </button>
+
+            </div>
+
+        </div>
+    </main>
+
+
+    <script type="module" src="script.js"></script>
+
+</body>
+
+</html>
