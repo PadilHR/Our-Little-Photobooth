@@ -20,7 +20,7 @@ import {
 // ========================================
 
 const firebaseConfig = {
-    apiKey: "***",
+    apiKey: "AIzaSyDiYYQoV3XH8Ki1KU7Nqnrr2rRrNU-EcSg",
     authDomain: "photobooth-online-b50e6.firebaseapp.com",
     projectId: "photobooth-online-b50e6",
     storageBucket: "photobooth-online-b50e6.firebasestorage.app",
