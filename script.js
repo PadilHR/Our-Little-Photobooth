@@ -1239,6 +1239,8 @@ function runCountdown(
 
 function capturePhoto() {
 
+    console.log("📸 CAPTURE:", myName);
+
     if (
         !localVideo.srcObject
     ) {
@@ -1323,6 +1325,11 @@ function receivePartnerPhoto(
     photoIndex,
     image
 ) {
+
+    console.log(
+        "📥 RECEIVED PARTNER PHOTO:",
+        photoIndex
+    );
 
     partnerPhotos[
         photoIndex
